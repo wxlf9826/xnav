@@ -24,7 +24,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { LinkItem, Category, DEFAULT_CATEGORIES, INITIAL_LINKS, WebDavConfig, AIConfig, SearchMode, ExternalSearchSource, SearchConfig, PasswordExpiryConfig } from './types';
+import { LinkItem, Category, DEFAULT_CATEGORIES, INITIAL_LINKS, WebDavConfig, AIConfig, SearchMode, ExternalSearchSource, SearchConfig } from './types';
 import { parseBookmarks } from './services/bookmarkParser';
 import Icon from './components/Icon';
 import LinkModal from './components/LinkModal';
@@ -58,7 +58,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Search Mode State
-  const [searchMode, setSearchMode] = useState<SearchMode>('internal');
+  const [searchMode, setSearchMode] = useState<SearchMode>('external');
   const [externalSearchSources, setExternalSearchSources] = useState<ExternalSearchSource[]>([]);
   const [isLoadingSearchConfig, setIsLoadingSearchConfig] = useState(true);
   
@@ -83,11 +83,26 @@ function App() {
       }
       return {
           provider: 'gemini',
-          // Try to use injected env if available, else empty.
-          // Note: In client-side build process.env might need specific config, but we leave it as fallback.
           apiKey: process.env.API_KEY || '', 
           baseUrl: '',
           model: 'gemini-2.5-flash'
+      };
+  });
+
+  // Site Settings State
+  const [siteSettings, setSiteSettings] = useState(() => {
+      const saved = localStorage.getItem('cloudnav_site_settings');
+      if (saved) {
+          try {
+              return JSON.parse(saved);
+          } catch (e) {}
+      }
+      return {
+          title: 'CloudNav - 我的导航',
+          navTitle: 'CloudNav',
+          favicon: '',
+          cardStyle: 'detailed' as const,
+          passwordExpiryDays: 7
       };
   });
   
@@ -118,13 +133,6 @@ function App() {
   // Batch Edit State
   const [isBatchEditMode, setIsBatchEditMode] = useState(false); // 是否处于批量编辑模式
   const [selectedLinks, setSelectedLinks] = useState<Set<string>>(new Set()); // 选中的链接ID集合
-  
-  // View Mode State
-  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>(() => {
-    // 从本地存储加载用户偏好设置
-    const savedViewMode = localStorage.getItem('cloudnav_view_mode');
-    return savedViewMode === 'detailed' ? 'detailed' : 'compact';
-  }); // 视图模式：compact（简约版）或 detailed（详情版）
   
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -162,12 +170,6 @@ function App() {
     action: 'edit',
     categoryId: '',
     categoryName: ''
-  });
-  
-  // Password Expiry Config State
-  const [passwordExpiryConfig, setPasswordExpiryConfig] = useState<PasswordExpiryConfig>({
-    value: 1,
-    unit: 'week'
   });
   
   // --- Helpers & Sync Logic ---
@@ -462,9 +464,31 @@ function App() {
       document.documentElement.classList.add('dark');
     }
 
-    // Load Token
+    // Load Token and check expiry
     const savedToken = localStorage.getItem(AUTH_KEY);
-    if (savedToken) setAuthToken(savedToken);
+    const lastLoginTime = localStorage.getItem('lastLoginTime');
+    
+    if (savedToken) {
+      const currentTime = Date.now();
+      
+      if (lastLoginTime) {
+        const lastLogin = parseInt(lastLoginTime);
+        const timeDiff = currentTime - lastLogin;
+        
+        const expiryDays = siteSettings.passwordExpiryDays || 7;
+        const expiryTimeMs = expiryDays > 0 ? expiryDays * 24 * 60 * 60 * 1000 : 0;
+        
+        if (expiryTimeMs > 0 && timeDiff > expiryTimeMs) {
+          localStorage.removeItem(AUTH_KEY);
+          localStorage.removeItem('lastLoginTime');
+          setAuthToken(null);
+        } else {
+          setAuthToken(savedToken);
+        }
+      } else {
+        setAuthToken(savedToken);
+      }
+    }
 
     // Load WebDAV Config
     const savedWebDav = localStorage.getItem(WEBDAV_CONFIG_KEY);
@@ -550,7 +574,7 @@ function App() {
                 const searchConfigData = await searchConfigRes.json();
                 // 检查搜索配置是否有效（包含必要的字段）
                 if (searchConfigData && (searchConfigData.mode || searchConfigData.externalSources || searchConfigData.selectedSource)) {
-                    setSearchMode(searchConfigData.mode || 'internal');
+                    setSearchMode(searchConfigData.mode || 'external');
                     setExternalSearchSources(searchConfigData.externalSources || []);
                     // 加载已保存的选中搜索源
                     if (searchConfigData.selectedSource) {
@@ -563,8 +587,15 @@ function App() {
             const websiteConfigRes = await fetch('/api/storage?getConfig=website');
             if (websiteConfigRes.ok) {
                 const websiteConfigData = await websiteConfigRes.json();
-                if (websiteConfigData && websiteConfigData.passwordExpiry) {
-                    setPasswordExpiryConfig(websiteConfigData.passwordExpiry);
+                if (websiteConfigData) {
+                    setSiteSettings(prev => ({
+                        ...prev,
+                        title: websiteConfigData.title || prev.title,
+                        navTitle: websiteConfigData.navTitle || prev.navTitle,
+                        favicon: websiteConfigData.favicon || prev.favicon,
+                        cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
+                        passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
+                    }));
                 }
             }
         } catch (e) {
@@ -581,7 +612,7 @@ function App() {
         loadFromLocal();
         
         // 如果从KV空间加载搜索配置失败，直接使用默认配置（不使用localStorage回退）
-        setSearchMode('internal');
+        setSearchMode('external');
         setExternalSearchSources([
             {
                 id: 'bing',
@@ -672,13 +703,13 @@ function App() {
     initData();
   }, []);
 
-  // Update page title and favicon when AI config changes
+  // Update page title and favicon when site settings change
   useEffect(() => {
-    if (aiConfig.websiteTitle) {
-      document.title = aiConfig.websiteTitle;
+    if (siteSettings.title) {
+      document.title = siteSettings.title;
     }
     
-    if (aiConfig.faviconUrl) {
+    if (siteSettings.favicon) {
       // Remove existing favicon links
       const existingFavicons = document.querySelectorAll('link[rel="icon"]');
       existingFavicons.forEach(favicon => favicon.remove());
@@ -686,10 +717,10 @@ function App() {
       // Add new favicon
       const favicon = document.createElement('link');
       favicon.rel = 'icon';
-      favicon.href = aiConfig.faviconUrl;
+      favicon.href = siteSettings.favicon;
       document.head.appendChild(favicon);
     }
-  }, [aiConfig.websiteTitle, aiConfig.faviconUrl]);
+  }, [siteSettings.title, siteSettings.favicon]);
 
   const toggleTheme = () => {
     const newMode = !darkMode;
@@ -704,9 +735,10 @@ function App() {
   };
 
   // 视图模式切换处理函数
-  const handleViewModeChange = (mode: 'compact' | 'detailed') => {
-    setViewMode(mode);
-    localStorage.setItem('cloudnav_view_mode', mode);
+  const handleViewModeChange = (cardStyle: 'detailed' | 'simple') => {
+    const newSiteSettings = { ...siteSettings, cardStyle };
+    setSiteSettings(newSiteSettings);
+    localStorage.setItem('cloudnav_site_settings', JSON.stringify(newSiteSettings));
   };
 
   // --- Batch Edit Functions ---
@@ -793,14 +825,19 @@ function App() {
             setSyncStatus('saved');
             
             // 登录成功后，获取网站配置（包括密码过期时间设置）
-            let passwordExpirySettings: PasswordExpiryConfig = { value: 1, unit: 'week' }; // 默认值
             try {
                 const websiteConfigRes = await fetch('/api/storage?getConfig=website');
                 if (websiteConfigRes.ok) {
                     const websiteConfigData = await websiteConfigRes.json();
-                    if (websiteConfigData && websiteConfigData.passwordExpiry) {
-                        passwordExpirySettings = websiteConfigData.passwordExpiry;
-                        setPasswordExpiryConfig(passwordExpirySettings);
+                    if (websiteConfigData) {
+                        setSiteSettings(prev => ({
+                            ...prev,
+                            title: websiteConfigData.title || prev.title,
+                            navTitle: websiteConfigData.navTitle || prev.navTitle,
+                            favicon: websiteConfigData.favicon || prev.favicon,
+                            cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
+                            passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
+                        }));
                     }
                 }
             } catch (e) {
@@ -815,21 +852,9 @@ function App() {
                 const lastLogin = parseInt(lastLoginTime);
                 const timeDiff = currentTime - lastLogin;
                 
-                // 计算过期时间（毫秒）
-                let expiryTimeMs = 0;
-                if (passwordExpirySettings.unit === 'day') {
-                    expiryTimeMs = passwordExpirySettings.value * 24 * 60 * 60 * 1000;
-                } else if (passwordExpirySettings.unit === 'week') {
-                    expiryTimeMs = passwordExpirySettings.value * 7 * 24 * 60 * 60 * 1000;
-                } else if (passwordExpirySettings.unit === 'month') {
-                    expiryTimeMs = passwordExpirySettings.value * 30 * 24 * 60 * 60 * 1000;
-                } else if (passwordExpirySettings.unit === 'year') {
-                    expiryTimeMs = passwordExpirySettings.value * 365 * 24 * 60 * 60 * 1000;
-                }
+                const expiryTimeMs = (siteSettings.passwordExpiryDays || 7) > 0 ? (siteSettings.passwordExpiryDays || 7) * 24 * 60 * 60 * 1000 : 0;
                 
-                // 如果设置了过期时间且已过期
                 if (expiryTimeMs > 0 && timeDiff > expiryTimeMs) {
-                    // 密码已过期，清除认证信息并提示用户
                     setAuthToken(null);
                     localStorage.removeItem(AUTH_KEY);
                     setIsAuthOpen(true);
@@ -838,7 +863,6 @@ function App() {
                 }
             }
             
-            // 更新最后登录时间
             localStorage.setItem('lastLoginTime', currentTime.toString());
             
             // 登录成功后，从服务器获取数据
@@ -1200,40 +1224,15 @@ function App() {
       updateData(updated, categories);
   };
 
-  const handleSavePasswordExpiryConfig = async (config: PasswordExpiryConfig) => {
-    setPasswordExpiryConfig(config);
-    
-    // 保存到云端
-    if (authToken) {
-      try {
-        const response = await fetch('/api/storage', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-auth-password': authToken
-          },
-          body: JSON.stringify({
-            saveConfig: 'website',
-            config: {
-              passwordExpiry: config
-            }
-          })
-        });
-        
-        if (!response.ok) {
-          console.error('Failed to save password expiry config');
-        }
-      } catch (error) {
-        console.error('Error saving password expiry config:', error);
-      }
-    }
-  };
-
-  const handleSaveAIConfig = async (config: AIConfig) => {
+  const handleSaveAIConfig = async (config: AIConfig, newSiteSettings?: any) => {
       setAiConfig(config);
       localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
       
-      // 同时保存到KV空间
+      if (newSiteSettings) {
+          setSiteSettings(newSiteSettings);
+          localStorage.setItem('cloudnav_site_settings', JSON.stringify(newSiteSettings));
+      }
+      
       if (authToken) {
           try {
               const response = await fetch('/api/storage', {
@@ -1253,6 +1252,28 @@ function App() {
               }
           } catch (error) {
               console.error('Error saving AI config to KV:', error);
+          }
+          
+          if (newSiteSettings) {
+              try {
+                  const response = await fetch('/api/storage', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'x-auth-password': authToken
+                      },
+                      body: JSON.stringify({
+                          saveConfig: 'website',
+                          config: newSiteSettings
+                      })
+                  });
+                  
+                  if (!response.ok) {
+                      console.error('Failed to save website config to KV:', response.statusText);
+                  }
+              } catch (error) {
+                  console.error('Error saving website config to KV:', error);
+              }
           }
       }
   };
@@ -1723,7 +1744,7 @@ function App() {
     } = useSortable({ id: link.id });
     
     // 根据视图模式决定卡片样式
-    const isDetailedView = viewMode === 'detailed';
+    const isDetailedView = siteSettings.cardStyle === 'detailed';
     
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -1736,14 +1757,14 @@ function App() {
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative transition-all duration-200 cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-hidden hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 ${
+        className={`group relative transition-all duration-200 cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-hidden hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 ${
           isSortingMode || isSortingPinned
-            ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800' 
+            ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800' 
             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
         } ${isDragging ? 'shadow-2xl scale-105' : ''} ${
           isDetailedView 
-            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500' 
-            : 'flex items-center rounded-xl border shadow-sm hover:border-blue-300 dark:hover:border-blue-600'
+            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-green-400 dark:hover:border-green-500' 
+            : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600'
         }`}
         {...attributes}
         {...listeners}
@@ -1786,7 +1807,7 @@ function App() {
     const isSelected = selectedLinks.has(link.id);
     
     // 根据视图模式决定卡片样式
-    const isDetailedView = viewMode === 'detailed';
+    const isDetailedView = siteSettings.cardStyle === 'detailed';
     
     return (
       <div
@@ -1794,7 +1815,7 @@ function App() {
         className={`group relative transition-all duration-200 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 ${
           isSelected 
             ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800' 
-            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+            : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
         } ${isBatchEditMode ? 'cursor-pointer' : ''} ${
           isDetailedView 
             ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500' 
@@ -1875,7 +1896,7 @@ function App() {
 
         {/* Hover Actions (Absolute Right) - 在批量编辑模式下隐藏 */}
         {!isBatchEditMode && (
-          <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-md p-1 absolute ${
+          <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 dark:bg-blue-900/20 backdrop-blur-sm rounded-md p-1 absolute ${
             isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
           }`}>
               <button 
@@ -1964,11 +1985,12 @@ function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         config={aiConfig}
+        siteSettings={siteSettings}
         onSave={handleSaveAIConfig}
         links={links}
+        categories={categories}
         onUpdateLinks={(newLinks) => updateData(newLinks, categories)}
-        passwordExpiryConfig={passwordExpiryConfig}
-        onSavePasswordExpiry={handleSavePasswordExpiryConfig}
+        authToken={authToken}
       />
 
       <SearchConfigModal
@@ -1997,7 +2019,7 @@ function App() {
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
             <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-              {aiConfig.navigationName || '云航 CloudNav'}
+              {siteSettings.navTitle || 'CloudNav'}
             </span>
         </div>
 
@@ -2096,7 +2118,7 @@ function App() {
                  title="Fork this project on GitHub"
                >
                  <GitFork size={14} />
-                 <span>Fork 项目 v1.6</span>
+                 <span>Fork 项目 v1.7</span>
                </a>
             </div>
         </div>
@@ -2276,9 +2298,9 @@ function App() {
             {/* 视图切换控制器 - 移动端：搜索框展开时隐藏，桌面端始终显示 */}
             <div className={`${isMobileSearchOpen ? 'hidden' : 'flex'} lg:flex items-center bg-slate-100 dark:bg-slate-700 rounded-full p-1`}>
               <button
-                onClick={() => handleViewModeChange('compact')}
+                onClick={() => handleViewModeChange('simple')}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-                  viewMode === 'compact'
+                  siteSettings.cardStyle === 'simple'
                     ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                 }`}
@@ -2289,7 +2311,7 @@ function App() {
               <button
                 onClick={() => handleViewModeChange('detailed')}
                 className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${
-                  viewMode === 'detailed'
+                  siteSettings.cardStyle === 'detailed'
                     ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                 }`}
@@ -2385,7 +2407,7 @@ function App() {
                                 strategy={rectSortingStrategy}
                             >
                                 <div className={`grid gap-3 ${
-                                  viewMode === 'detailed' 
+                                  siteSettings.cardStyle === 'detailed' 
                                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
                                     : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                                 }`}>
@@ -2397,7 +2419,7 @@ function App() {
                         </DndContext>
                     ) : (
                         <div className={`grid gap-3 ${
-                          viewMode === 'detailed' 
+                          siteSettings.cardStyle === 'detailed' 
                             ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
                             : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                         }`}>
@@ -2553,7 +2575,7 @@ function App() {
                                 strategy={rectSortingStrategy}
                             >
                                 <div className={`grid gap-3 ${
-                                  viewMode === 'detailed' 
+                                  siteSettings.cardStyle === 'detailed' 
                                     ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
                                     : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                                 }`}>
@@ -2565,7 +2587,7 @@ function App() {
                         </DndContext>
                     ) : (
                         <div className={`grid gap-3 ${
-                          viewMode === 'detailed' 
+                          siteSettings.cardStyle === 'detailed' 
                             ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
                             : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                         }`}>

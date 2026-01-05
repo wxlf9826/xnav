@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Cloud, Download, Upload, CheckCircle2, AlertCircle, RefreshCw, Save } from 'lucide-react';
 import { Category, LinkItem, WebDavConfig, SearchConfig, AIConfig } from '../types';
-import { checkWebDavConnection, uploadBackup, downloadBackup } from '../services/webDavService';
+import { checkWebDavConnection, uploadBackup, uploadBackupWithTimestamp, downloadBackup } from '../services/webDavService';
 import { generateBookmarkHtml, downloadHtmlFile } from '../services/exportService';
 
 interface BackupModalProps {
@@ -58,6 +58,19 @@ const BackupModal: React.FC<BackupModalProps> = ({
     if (success) {
         setSyncStatus('success');
         setStatusMsg('备份成功！');
+    } else {
+        setSyncStatus('error');
+        setStatusMsg('上传失败，请检查配置或网络。');
+    }
+  };
+
+  const handleBackupToCloudWithTimestamp = async () => {
+    setSyncStatus('uploading');
+    setStatusMsg('正在上传...');
+    const result = await uploadBackupWithTimestamp(config, { links, categories, searchConfig, aiConfig });
+    if (result.success) {
+        setSyncStatus('success');
+        setStatusMsg(`备份成功！文件名: ${result.filename}`);
     } else {
         setSyncStatus('error');
         setStatusMsg('上传失败，请检查配置或网络。');
@@ -197,14 +210,14 @@ const BackupModal: React.FC<BackupModalProps> = ({
             {/* Section 2: Sync Actions */}
             <section className="space-y-4">
                 <h4 className="font-medium text-slate-800 dark:text-slate-200">云端同步操作</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <button 
                         onClick={handleBackupToCloud}
                         disabled={!config.enabled}
                         className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
                         <Upload className="w-8 h-8 text-blue-500 mb-2 group-hover:-translate-y-1 transition-transform" />
-                        <span className="text-sm font-medium dark:text-white">上传备份到 WebDAV</span>
+                        <span className="text-sm font-medium dark:text-white">上传备份</span>
                         <span className="text-xs text-slate-500 mt-1">覆盖云端数据</span>
                     </button>
 
@@ -216,6 +229,16 @@ const BackupModal: React.FC<BackupModalProps> = ({
                         <Download className="w-8 h-8 text-purple-500 mb-2 group-hover:-translate-y-1 transition-transform" />
                         <span className="text-sm font-medium dark:text-white">从 WebDAV 恢复</span>
                         <span className="text-xs text-slate-500 mt-1">覆盖本地数据</span>
+                    </button>
+
+                    <button 
+                        onClick={handleBackupToCloudWithTimestamp}
+                        disabled={!config.enabled}
+                        className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                        <Upload className="w-8 h-8 text-green-500 mb-2 group-hover:-translate-y-1 transition-transform" />
+                        <span className="text-sm font-medium dark:text-white">双重备份</span>
+                        <span className="text-xs text-slate-500 mt-1">带时间戳</span>
                     </button>
                 </div>
                 

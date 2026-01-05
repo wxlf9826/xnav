@@ -56,7 +56,7 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
     // 如果是获取网站配置请求
     if (getConfig === 'website') {
       const websiteConfig = await env.CLOUDNAV_KV.get('website_config');
-      return new Response(websiteConfig || JSON.stringify({ passwordExpiry: { value: 1, unit: 'week' } }), {
+      return new Response(websiteConfig || JSON.stringify({ passwordExpiryDays: 7 }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
@@ -100,32 +100,16 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
       
       // 检查密码是否过期
       const websiteConfigStr = await env.CLOUDNAV_KV.get('website_config');
-      const websiteConfig = websiteConfigStr ? JSON.parse(websiteConfigStr) : { passwordExpiry: { value: 1, unit: 'week' } };
-      const passwordExpiry = websiteConfig.passwordExpiry || { value: 1, unit: 'week' };
+      const websiteConfig = websiteConfigStr ? JSON.parse(websiteConfigStr) : { passwordExpiryDays: 7 };
+      const passwordExpiryDays = websiteConfig.passwordExpiryDays || 7;
       
       // 如果设置了密码过期时间，检查是否过期
-      if (passwordExpiry.unit !== 'permanent') {
+      if (passwordExpiryDays > 0) {
         const lastAuthTime = await env.CLOUDNAV_KV.get('last_auth_time');
         if (lastAuthTime) {
           const lastTime = parseInt(lastAuthTime);
           const now = Date.now();
-          let expiryMs = 0;
-          
-          // 计算过期时间（毫秒）
-          switch (passwordExpiry.unit) {
-            case 'day':
-              expiryMs = passwordExpiry.value * 24 * 60 * 60 * 1000;
-              break;
-            case 'week':
-              expiryMs = passwordExpiry.value * 7 * 24 * 60 * 60 * 1000;
-              break;
-            case 'month':
-              expiryMs = passwordExpiry.value * 30 * 24 * 60 * 60 * 1000;
-              break;
-            case 'year':
-              expiryMs = passwordExpiry.value * 365 * 24 * 60 * 60 * 1000;
-              break;
-          }
+          const expiryMs = passwordExpiryDays * 24 * 60 * 60 * 1000;
           
           // 如果已过期，返回错误
           if (now - lastTime > expiryMs) {

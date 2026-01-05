@@ -277,7 +277,7 @@ const SearchConfigModal: React.FC<SearchConfigModalProps> = ({
               <ExternalLink size={14} /> 使用说明
             </h4>
             <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
-              <li>• 启用多个搜索源时，将使用第一个启用的搜索源进行搜索</li>
+              <li>• 点击首页搜索框左侧的放大镜图标切换搜索源</li>
               <li>• 搜索URL中必须包含 <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">{'{query}'}</code> 占位符</li>
               <li>• 配置信息会自动保存到本地存储和云端（如果已登录）</li>
             </ul>
