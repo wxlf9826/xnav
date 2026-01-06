@@ -1776,8 +1776,8 @@ function App() {
         ref={setNodeRef}
         style={style}
         className={`group relative transition-all duration-200 cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-hidden hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 ${isSortingMode || isSortingPinned
-            ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800'
-            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+          ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800'
+          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
           } ${isDragging ? 'shadow-2xl scale-105' : ''} ${isDetailedView
             ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-green-400 dark:hover:border-green-500'
             : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600'
@@ -1825,8 +1825,8 @@ function App() {
       <div
         key={link.id}
         className={`group relative transition-all duration-200 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 ${isSelected
-            ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
-            : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
+          ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
+          : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
           } ${isBatchEditMode ? 'cursor-pointer' : ''} ${isDetailedView
             ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500'
             : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
@@ -1936,6 +1936,7 @@ function App() {
             </div>
             <AuthModal isOpen={true} onLogin={handleLogin} onGuestMode={() => {
               setIsGuestMode(true);
+              setIsAuthOpen(false); // 明确关闭由initData可能打开的认证弹窗
               setIsCheckingAuth(false);
               fetchData();
             }} />
@@ -2039,8 +2040,8 @@ function App() {
               <button
                 onClick={() => { setSelectedCategory('all'); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${selectedCategory === 'all'
-                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
               >
                 <div className="p-1"><Icon name="LayoutGrid" size={18} /></div>
@@ -2067,8 +2068,8 @@ function App() {
                     key={cat.id}
                     onClick={() => handleCategoryClick(cat)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all group ${selectedCategory === cat.id
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
                       }`}
                   >
                     <div className={`p-1.5 rounded-lg transition-colors flex items-center justify-center ${selectedCategory === cat.id ? 'bg-blue-100 dark:bg-blue-800' : 'bg-slate-100 dark:bg-slate-800'}`}>
@@ -2089,8 +2090,8 @@ function App() {
                   onClick={() => { if (isGuestMode) return; if (!authToken) setIsAuthOpen(true); else setIsImportModalOpen(true); }}
                   disabled={isGuestMode}
                   className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${isGuestMode
-                      ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
                     }`}
                   title={isGuestMode ? "游客模式无法导入" : "导入书签"}
                 >
@@ -2102,8 +2103,8 @@ function App() {
                   onClick={() => { if (isGuestMode) return; if (!authToken) setIsAuthOpen(true); else setIsBackupModalOpen(true); }}
                   disabled={isGuestMode}
                   className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${isGuestMode
-                      ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
                     }`}
                   title={isGuestMode ? "游客模式无法备份" : "备份与恢复"}
                 >
@@ -2115,8 +2116,8 @@ function App() {
                   onClick={() => { if (isGuestMode) return; setIsSettingsModalOpen(true); }}
                   disabled={isGuestMode}
                   className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${isGuestMode
-                      ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
                     }`}
                   title={isGuestMode ? "游客模式无法修改设置" : "AI 设置"}
                 >
@@ -2174,8 +2175,8 @@ function App() {
                     <Search size={20} />
                   </button>
 
-                  {/* 搜索模式切换 - 平板端和桌面端显示，手机端隐藏 */}
-                  <div className="hidden sm:hidden md:flex lg:flex items-center gap-2 flex-shrink-0">
+                  {/* 搜索模式切换 - 平板端和桌面端显示，手机端在展开搜索时显示 */}
+                  <div className={`${isMobileSearchOpen ? 'flex' : 'hidden'} md:flex lg:flex items-center gap-2 flex-shrink-0`}>
                     <div className="flex items-center bg-slate-100 dark:bg-slate-700 rounded-full p-1">
                       <button
                         onClick={() => handleSearchModeChange('internal')}
@@ -2190,8 +2191,8 @@ function App() {
                       <button
                         onClick={() => handleSearchModeChange('external')}
                         className={`px-3 py-1 text-xs font-medium rounded-full transition-all flex items-center justify-center min-h-[24px] min-w-[40px] ${searchMode === 'external'
-                            ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
+                          ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                           }`}
                         title="站外搜索"
                       >
@@ -2321,8 +2322,8 @@ function App() {
                   <button
                     onClick={() => handleViewModeChange('simple')}
                     className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${siteSettings.cardStyle === 'simple'
-                        ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
+                      ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                       }`}
                     title="简约版视图"
                   >
@@ -2331,8 +2332,8 @@ function App() {
                   <button
                     onClick={() => handleViewModeChange('detailed')}
                     className={`px-3 py-1 text-xs font-medium rounded-full transition-all ${siteSettings.cardStyle === 'detailed'
-                        ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
+                      ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                       }`}
                     title="详情版视图"
                   >
@@ -2434,8 +2435,8 @@ function App() {
                         strategy={rectSortingStrategy}
                       >
                         <div className={`grid gap-3 ${siteSettings.cardStyle === 'detailed'
-                            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                            : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                          : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                           }`}>
                           {pinnedLinks.map(link => (
                             <SortableLinkCard key={link.id} link={link} />
@@ -2445,8 +2446,8 @@ function App() {
                     </DndContext>
                   ) : (
                     <div className={`grid gap-3 ${siteSettings.cardStyle === 'detailed'
-                        ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                        : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                      ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                      : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                       }`}>
                       {pinnedLinks.map(link => renderLinkCard(link))}
                     </div>
@@ -2508,8 +2509,8 @@ function App() {
                           <button
                             onClick={toggleBatchEditMode}
                             className={`flex items-center gap-1 px-3 py-1.5 text-white text-xs font-medium rounded-full transition-colors ${isBatchEditMode
-                                ? 'bg-red-600 hover:bg-red-700'
-                                : 'bg-blue-600 hover:bg-blue-700'
+                              ? 'bg-red-600 hover:bg-red-700'
+                              : 'bg-blue-600 hover:bg-blue-700'
                               }`}
                             title={isBatchEditMode ? "退出批量编辑" : "批量编辑"}
                           >
@@ -2599,8 +2600,8 @@ function App() {
                           strategy={rectSortingStrategy}
                         >
                           <div className={`grid gap-3 ${siteSettings.cardStyle === 'detailed'
-                              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                              : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                            : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                             }`}>
                             {displayedLinks.map(link => (
                               <SortableLinkCard key={link.id} link={link} />
@@ -2610,8 +2611,8 @@ function App() {
                       </DndContext>
                     ) : (
                       <div className={`grid gap-3 ${siteSettings.cardStyle === 'detailed'
-                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                          : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
+                        ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                        : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                         }`}>
                         {displayedLinks.map(link => renderLinkCard(link))}
                       </div>
