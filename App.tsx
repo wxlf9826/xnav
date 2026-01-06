@@ -1847,10 +1847,14 @@ function App() {
                 }`} title={link.title}>
                 {link.title}
               </h3>
-              {isDetailedView && link.description && (
-                <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-2 mt-0.5">
-                  {link.description}
-                </p>
+              {isDetailedView && (
+                <div className="h-[32px] mt-0.5">
+                  {link.description && (
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-2">
+                      {link.description}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -2028,10 +2032,14 @@ function App() {
                 {link.title}
               </h3>
 
-              {isDetailedView && link.description && (
-                <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight line-clamp-2">
-                  {link.description}
-                </p>
+              {isDetailedView && (
+                <div className="h-[32px] mt-0.5">
+                  {link.description && (
+                    <p className="text-[12px] text-slate-500 dark:text-slate-400 leading-tight line-clamp-2">
+                      {link.description}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
