@@ -48,6 +48,9 @@ const WEBDAV_CONFIG_KEY = 'cloudnav_webdav_config';
 const AI_CONFIG_KEY = 'cloudnav_ai_config';
 const SEARCH_CONFIG_KEY = 'cloudnav_search_config';
 
+// 默认图标 SVG - 精美的渐变设计
+const DEFAULT_ICON_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%2360A5FA;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23A78BFA;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23grad)'/%3E%3Cg transform='translate(16, 16)'%3E%3Cpath d='M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm0 28c-6.627 0-12-5.373-12-12S9.373 4 16 4s12 5.373 12 12-5.373 12-12 12z' fill='white' opacity='0.9'/%3E%3Ccircle cx='16' cy='16' r='6' fill='white' opacity='0.7'/%3E%3C/g%3E%3C/svg%3E`;
+
 function App() {
   // --- State ---
   const [links, setLinks] = useState<LinkItem[]>([]);
@@ -1799,12 +1802,12 @@ function App() {
       <div
         ref={setNodeRef}
         style={style}
-        className={`group relative transition-all duration-200 cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-hidden hover:shadow-lg hover:shadow-green-100/50 dark:hover:shadow-green-900/20 ${isSortingMode || isSortingPinned
-          ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800'
-          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+        className={`group relative transition-all duration-300 ease-out cursor-grab active:cursor-grabbing min-w-0 max-w-full overflow-visible hover:shadow-2xl hover:-translate-y-1 ${isSortingMode || isSortingPinned
+          ? 'bg-green-20 dark:bg-green-900/30 border-green-200 dark:border-green-800 hover:shadow-green-200/60 dark:hover:shadow-green-900/40'
+          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-green-200/50 dark:hover:shadow-green-800/50'
           } ${isDragging ? 'shadow-2xl scale-105' : ''} ${isDetailedView
-            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-green-400 dark:hover:border-green-500'
-            : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600'
+            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-green-400 dark:hover:border-green-500 hover:bg-gradient-to-br hover:from-green-50/30 hover:to-emerald-50/30 dark:hover:from-green-900/10 dark:hover:to-emerald-900/10'
+            : 'flex items-center rounded-xl border shadow-sm hover:border-green-300 dark:hover:border-green-600 hover:bg-gradient-to-r hover:from-green-50/30 hover:to-emerald-50/30 dark:hover:from-green-900/10 dark:hover:to-emerald-900/10'
           }`}
         {...attributes}
         {...listeners}
@@ -1822,12 +1825,20 @@ function App() {
           {/* 顶部内容区域：图标 + 文字 */}
           <div className="flex items-center gap-3 w-full mb-1">
             {/* Icon - 圆形大图标 (略微缩小) */}
-            <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            <div className={`shrink-0 flex items-center justify-center transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 group-hover:shadow-lg group-hover:shadow-blue-200/50 dark:group-hover:shadow-blue-900/50' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 group-hover:shadow-md'
               }`}>
               {link.icon ? (
-                <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+                <img
+                  src={link.icon}
+                  alt=""
+                  className="w-6 h-6 object-contain rounded-full transition-all duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = DEFAULT_ICON_SVG;
+                  }}
+                />
               ) : (
-                <span className={`${isDetailedView ? 'text-lg' : 'text-sm'} font-bold text-blue-600 dark:text-blue-400 capitalize`}>{link.title.charAt(0)}</span>
+                <img src={DEFAULT_ICON_SVG} alt="" className="w-6 h-6 object-contain rounded-full" />
               )}
             </div>
 
@@ -1962,12 +1973,12 @@ function App() {
     return (
       <div
         key={link.id}
-        className={`group relative transition-all duration-200 hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 ${isSelected
-          ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'
-          : 'bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-slate-200 dark:border-slate-700'
-          } ${isBatchEditMode ? 'cursor-pointer' : ''} ${isDetailedView
-            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500'
-            : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
+        className={`group relative transition-all duration-300 ease-out hover:shadow-2xl hover:-translate-y-1 overflow-visible ${isSelected
+          ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 hover:shadow-red-200/60 dark:hover:shadow-red-900/40'
+          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-blue-200/50 dark:hover:shadow-blue-800/50'
+          } ${isBatchEditMode ? 'cursor-pointer' : 'cursor-pointer'} ${isDetailedView
+            ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-50/40 hover:to-indigo-50/40 dark:hover:from-blue-900/15 dark:hover:to-indigo-900/15'
+            : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-gradient-to-r hover:from-blue-50/40 hover:to-indigo-50/40 dark:hover:from-blue-900/15 dark:hover:to-indigo-900/15'
           }`}
         onClick={() => {
           if (isBatchEditMode) {
@@ -1983,17 +1994,25 @@ function App() {
           {/* 顶部内容区域：图标 + 文字 */}
           <div className={`flex items-center gap-3 w-full mb-0 ${isDetailedView ? 'mb-1' : ''}`}>
             {/* Icon - 圆形图标 */}
-            <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            <div className={`shrink-0 flex items-center justify-center transition-all duration-500 group-hover:scale-125 group-hover:rotate-12 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 group-hover:shadow-lg group-hover:shadow-blue-200/50 dark:group-hover:shadow-blue-900/50' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 group-hover:shadow-md'
               }`}>
               {link.icon ? (
-                <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+                <img
+                  src={link.icon}
+                  alt=""
+                  className="w-6 h-6 object-contain rounded-full transition-all duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = DEFAULT_ICON_SVG;
+                  }}
+                />
               ) : (
-                <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+                <img src={DEFAULT_ICON_SVG} alt="" className="w-6 h-6 object-contain rounded-full" />
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-base font-bold' : 'text-sm font-medium'
+              <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all duration-300 group-hover:translate-x-1 ${isDetailedView ? 'text-base font-bold' : 'text-sm font-medium'
                 }`} title={link.title}>
                 {link.title}
               </h3>
