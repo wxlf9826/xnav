@@ -125,6 +125,24 @@ export const onRequestGet = async (context: { env: Env; request: Request }) => {
       await env.CLOUDNAV_KV.put('last_auth_time', Date.now().toString());
     }
     
+    // 游客模式：如果没有提供密码或密码错误，但服务器设置了密码，返回公开数据（只读）
+    const password = request.headers.get('x-auth-password');
+    const isGuestMode = !password || password !== env.PASSWORD;
+    
+    if (isGuestMode && env.PASSWORD && !url.searchParams.get('getConfig')) {
+      // 游客模式：返回公开数据（links 和 categories）
+      if (!data) {
+        return new Response(JSON.stringify({ links: [], categories: [] }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+      
+      // 游客模式直接返回数据，不检查密码过期
+      return new Response(data, {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+    
     if (!data) {
       // 如果没有数据，返回空结构
       return new Response(JSON.stringify({ links: [], categories: [] }), {
