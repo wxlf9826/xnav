@@ -1772,7 +1772,7 @@ function App() {
   // --- Render Components ---
 
   // 创建可排序的链接卡片组件
-  const SortableLinkCard = ({ link }: { link: LinkItem }) => {
+  const SortableLinkCard = ({ link, id }: { link: LinkItem; id: string; key?: any }) => {
     const {
       attributes,
       listeners,
@@ -1809,38 +1809,52 @@ function App() {
         {/* 链接内容 - 移除a标签，改为div防止点击跳转 */}
         <div className={`flex flex-1 min-w-0 overflow-hidden ${isDetailedView ? 'flex-col' : 'items-center gap-3'
           }`}>
-          {/* 第一行：图标和标题水平排列 */}
-          <div className={`flex items-center gap-3 mb-2 ${isDetailedView ? '' : 'w-full'
-            }`}>
-            {/* Icon */}
-            <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+          {/* 顶部内容区域：图标 + 文字 */}
+          <div className="flex items-center gap-3 w-full mb-3">
+            {/* Icon - 圆形大图标 */}
+            <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
               }`}>
-              {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+              {link.icon ? (
+                <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+              ) : (
+                <span className={`${isDetailedView ? 'text-lg' : 'text-sm'} font-bold text-blue-600 dark:text-blue-400 capitalize`}>{link.title.charAt(0)}</span>
+              )}
             </div>
 
-            {/* 标题 */}
-            <h3 className={`text-slate-900 dark:text-slate-100 truncate overflow-hidden text-ellipsis ${isDetailedView ? 'text-base' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
-              }`} title={link.title}>
-              {link.title}
-            </h3>
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis ${isDetailedView ? 'text-lg font-bold' : 'text-sm font-medium'
+                }`} title={link.title}>
+                {link.title}
+              </h3>
+              {isDetailedView && link.description && (
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-1 mt-0.5">
+                  {link.description}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* 第二行：描述文字 */}
-          {isDetailedView && link.description && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-              {link.description}
-            </p>
-          )}
-
-          {/* 标签展示 */}
-          {link.tags && link.tags.length > 0 && (
-            <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
-              {link.tags.map(tag => (
-                <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+          {/* 标签展示 - 带有文件夹图标和柔和配色 */}
+          {isDetailedView && link.tags && link.tags.length > 0 && (
+            <>
+              <div className="border-t border-slate-100 dark:border-slate-700/50 mb-3"></div>
+              <div className="flex items-center gap-2 w-full overflow-hidden">
+                <div className="shrink-0 text-slate-400">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                  {link.tags.map(tag => (
+                    <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-[10px] font-medium rounded-md transition-colors hover:bg-red-100 dark:hover:bg-red-900/40">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                {/* 右下角小箭头指示器 */}
+                <div className="shrink-0 text-slate-300 dark:text-slate-600 ml-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 16 12 12 16"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -1870,37 +1884,53 @@ function App() {
         {isBatchEditMode ? (
           <div className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-col' : 'items-center'
             }`}>
-            {/* 第一行：图标和标题水平排列 */}
-            <div className={`flex items-center gap-3 w-full`}>
-              {/* Icon */}
-              <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            {/* 顶部内容区域：图标 + 文字 */}
+            <div className={`flex items-center gap-3 w-full h-full mb-0 ${isDetailedView ? 'mb-3' : ''}`}>
+              {/* Icon - 圆形大图标 */}
+              <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
                 }`}>
-                {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+                {link.icon ? (
+                  <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+                ) : (
+                  <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-lg' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+                )}
               </div>
 
-              {/* 标题 */}
-              <h3 className={`text-slate-900 dark:text-slate-100 truncate overflow-hidden text-ellipsis ${isDetailedView ? 'text-base' : 'text-sm font-medium text-slate-800 dark:text-slate-200'
-                }`} title={link.title}>
-                {link.title}
-              </h3>
+              <div className="flex-1 min-w-0">
+                <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-lg font-bold' : 'text-sm font-medium'
+                  }`} title={link.title}>
+                  {link.title}
+                </h3>
+
+                {isDetailedView && link.description && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed line-clamp-1">
+                    {link.description}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {/* 第二行：描述文字 */}
-            {isDetailedView && link.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                {link.description}
-              </p>
-            )}
-
-            {/* 标签展示 */}
-            {link.tags && link.tags.length > 0 && (
-              <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
-                {link.tags.map(tag => (
-                  <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+            {/* 标签展示 - 仅在详情模式显示 */}
+            {isDetailedView && link.tags && link.tags.length > 0 && (
+              <>
+                <div className="border-t border-slate-100 dark:border-slate-700/50 my-3"></div>
+                <div className="flex items-center gap-2 w-full overflow-hidden">
+                  <div className="shrink-0 text-slate-400">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </div>
+                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                    {link.tags.map(tag => (
+                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-[10px] font-medium rounded-md transition-colors hover:bg-red-100 dark:hover:bg-red-900/40">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {/* 右下角小箭头指示器 */}
+                  <div className="shrink-0 text-slate-300 dark:text-slate-600 ml-2 group-hover:text-blue-400 transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 16 12 12 16"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         ) : (
@@ -1908,40 +1938,56 @@ function App() {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-col' : 'items-center'
-              }`}
-            title={isDetailedView ? link.url : (link.description || link.url)} // 详情版视图只显示URL作为tooltip
+            className={`flex flex-col flex-1 min-w-0 overflow-hidden h-full`}
+            title={isDetailedView ? link.url : (link.description || link.url)}
           >
-            {/* 第一行：图标和标题水平排列 */}
-            <div className={`flex items-center gap-3 w-full`}>
-              {/* Icon */}
-              <div className={`text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? 'w-8 h-8 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+            {/* 顶部内容区域：图标 + 文字 */}
+            <div className={`flex items-center gap-3 w-full mb-0 ${isDetailedView ? 'mb-3' : ''}`}>
+              {/* Icon - 圆形大图标 */}
+              <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
                 }`}>
-                {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+                {link.icon ? (
+                  <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+                ) : (
+                  <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-lg' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+                )}
               </div>
 
-              {/* 标题 */}
-              <h3 className={`text-slate-800 dark:text-slate-200 truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-base' : 'text-sm font-medium'
-                }`} title={link.title}>
-                {link.title}
-              </h3>
+              <div className="flex-1 min-w-0">
+                <h3 className={`text-slate-800 dark:text-slate-200 truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-lg font-bold' : 'text-sm font-medium'
+                  }`} title={link.title}>
+                  {link.title}
+                </h3>
+
+                {isDetailedView && link.description && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed line-clamp-1">
+                    {link.description}
+                  </p>
+                )}
+              </div>
             </div>
 
-            {isDetailedView && link.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
-                {link.description}
-              </p>
-            )}
-
-            {/* 标签展示 */}
-            {link.tags && link.tags.length > 0 && (
-              <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
-                {link.tags.map(tag => (
-                  <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
+            {/* 标签展示 - 仅在详情模式显示 */}
+            {isDetailedView && link.tags && link.tags.length > 0 && (
+              <>
+                <div className="border-t border-slate-100 dark:border-slate-700/50 my-3"></div>
+                <div className="flex items-center gap-2 w-full overflow-hidden">
+                  <div className="shrink-0 text-slate-400">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  </div>
+                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                    {link.tags.map(tag => (
+                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 text-[10px] font-medium rounded-md transition-colors hover:bg-red-100 dark:hover:bg-red-900/40">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {/* 右下角小箭头指示器 */}
+                  <div className="shrink-0 text-slate-300 dark:text-slate-600 ml-2 group-hover:text-blue-400 transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 8 16 12 12 16"></polyline><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                  </div>
+                </div>
+              </>
             )}
 
             {!isDetailedView && link.description && (
@@ -2489,11 +2535,11 @@ function App() {
                         strategy={rectSortingStrategy}
                       >
                         <div className={`grid gap-3 ${siteSettings.cardStyle === 'detailed'
-                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
                           : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                           }`}>
                           {pinnedLinks.map(link => (
-                            <SortableLinkCard key={link.id} link={link} />
+                            <SortableLinkCard key={link.id} id={link.id} link={link} />
                           ))}
                         </div>
                       </SortableContext>
@@ -2685,7 +2731,7 @@ function App() {
                             : 'grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
                             }`}>
                             {displayedLinks.map(link => (
-                              <SortableLinkCard key={link.id} link={link} />
+                              <SortableLinkCard key={link.id} id={link.id} link={link} />
                             ))}
                           </div>
                         </SortableContext>
