@@ -53,6 +53,7 @@ function App() {
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null); // 当前选中的标签
   const [searchQuery, setSearchQuery] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1334,12 +1335,14 @@ function App() {
       return;
     }
     setSelectedCategory(cat.id);
+    setSelectedTag(null); // 切换分类时重置标签过滤
     setSidebarOpen(false);
   };
 
   const handleUnlockCategory = (catId: string) => {
     setUnlockedCategoryIds(prev => new Set(prev).add(catId));
     setSelectedCategory(catId);
+    setSelectedTag(null); // 解锁并切换分类时重置标签过滤
   };
 
   const handleUpdateCategories = (newCats: Category[]) => {
@@ -1715,6 +1718,19 @@ function App() {
     });
   }, [links, categories, unlockedCategoryIds]);
 
+  // 计算当前分类下可用的标签
+  const availableTags = useMemo(() => {
+    const categoryLinks = links.filter(l =>
+      (selectedCategory === 'all' || l.categoryId === selectedCategory) &&
+      !isCategoryLocked(l.categoryId)
+    );
+    const tags = new Set<string>();
+    categoryLinks.forEach(link => {
+      link.tags?.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [links, selectedCategory, unlockedCategoryIds]);
+
   const displayedLinks = useMemo(() => {
     let result = links;
 
@@ -1736,6 +1752,11 @@ function App() {
       result = result.filter(l => l.categoryId === selectedCategory);
     }
 
+    // Tag Filter
+    if (selectedTag) {
+      result = result.filter(l => l.tags && l.tags.includes(selectedTag));
+    }
+
     // 按照order字段排序，如果没有order字段则按创建时间排序
     // 修改排序逻辑：order值越大排在越前面，新增的卡片order值最大，会排在最前面
     // 我们需要反转这个排序，让新增的卡片(order值最大)排在最后面
@@ -1745,7 +1766,7 @@ function App() {
       // 改为升序排序，这样order值小(旧卡片)的排在前面，order值大(新卡片)的排在后面
       return aOrder - bOrder;
     });
-  }, [links, selectedCategory, searchQuery, categories, unlockedCategoryIds]);
+  }, [links, selectedCategory, selectedTag, searchQuery, categories, unlockedCategoryIds]);
 
 
   // --- Render Components ---
@@ -1810,6 +1831,17 @@ function App() {
               {link.description}
             </p>
           )}
+
+          {/* 标签展示 */}
+          {link.tags && link.tags.length > 0 && (
+            <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
+              {link.tags.map(tag => (
+                <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1859,6 +1891,17 @@ function App() {
                 {link.description}
               </p>
             )}
+
+            {/* 标签展示 */}
+            {link.tags && link.tags.length > 0 && (
+              <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
+                {link.tags.map(tag => (
+                  <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <a
@@ -1884,12 +1927,23 @@ function App() {
               </h3>
             </div>
 
-            {/* 第二行：描述文字 */}
             {isDetailedView && link.description && (
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
                 {link.description}
               </p>
             )}
+
+            {/* 标签展示 */}
+            {link.tags && link.tags.length > 0 && (
+              <div className={`flex flex-wrap gap-1 ${isDetailedView ? 'mt-3' : 'mt-1'}`}>
+                {link.tags.map(tag => (
+                  <span key={tag} className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] rounded-md border border-slate-200 dark:border-slate-600">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {!isDetailedView && link.description && (
               <div className="tooltip-custom absolute left-0 -top-8 w-max max-w-[200px] bg-black text-white text-xs p-2 rounded opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all z-20 pointer-events-none truncate">
                 {link.description}
@@ -2569,6 +2623,33 @@ function App() {
                       )
                     )}
                   </div>
+
+                  {/* 标签选择 UI */}
+                  {availableTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      <button
+                        onClick={() => setSelectedTag(null)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${!selectedTag
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                          }`}
+                      >
+                        全部
+                      </button>
+                      {availableTags.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${selectedTag === tag
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                            }`}
+                        >
+                          #{tag}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {displayedLinks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
