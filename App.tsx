@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Search, Plus, Upload, Moon, Sun, Menu, X,
+  Search, Plus, Upload, Moon, Sun, Menu, X, ChevronRight,
   Trash2, Edit2, Loader2, Cloud, CheckCircle2, AlertCircle,
   Pin, Settings, Lock, CloudCog, Github, GitFork, GripVertical, Save, CheckSquare, LogOut, ExternalLink, Eye
 } from 'lucide-react';
@@ -1809,9 +1809,16 @@ function App() {
         {...attributes}
         {...listeners}
       >
-        {/* 链接内容 - 移除a标签，改为div防止点击跳转 */}
-        <div className={`flex flex-1 min-w-0 overflow-hidden ${isDetailedView ? 'flex-col' : 'items-center gap-3'
-          }`}>
+        {/* 链接内容 - 移除a标签，改为div并关联点击预览 */}
+        <div
+          className={`flex flex-1 min-w-0 overflow-hidden ${isDetailedView ? 'flex-col' : 'items-center gap-3'}`}
+          onClick={(e) => {
+            // 如果不是排序模式，则触发预览
+            if (!isSortingMode && !isSortingPinned) {
+              setDetailViewLink(link);
+            }
+          }}
+        >
           {/* 顶部内容区域：图标 + 文字 */}
           <div className="flex items-center gap-3 w-full mb-1">
             {/* Icon - 圆形大图标 (略微缩小) */}
@@ -1849,16 +1856,16 @@ function App() {
                     </span>
                   ))}
                 </div>
-                {/* 预览图标 - 放大镜 */}
+                {/* 跳转图标 - 箭头 */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDetailViewLink(link);
+                    window.open(link.url, '_blank', 'noopener,noreferrer');
                   }}
                   className="shrink-0 text-slate-300 dark:text-slate-600 ml-1 hover:text-blue-500 transition-colors p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  title="查看详情"
+                  title="直接访问"
                 >
-                  <Search size={14} />
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </>
@@ -1962,136 +1969,78 @@ function App() {
             ? 'flex flex-col rounded-2xl border shadow-sm p-4 min-h-[100px] hover:border-blue-400 dark:hover:border-blue-500'
             : 'flex items-center justify-between rounded-xl border shadow-sm p-3 hover:border-blue-300 dark:hover:border-blue-600'
           }`}
-        onClick={() => isBatchEditMode && toggleLinkSelection(link.id)}
+        onClick={() => {
+          if (isBatchEditMode) {
+            toggleLinkSelection(link.id);
+          } else {
+            setDetailViewLink(link);
+          }
+        }}
         onContextMenu={(e) => handleContextMenu(e, link)}
       >
         {/* 链接内容 - 在批量编辑模式下不使用a标签 */}
-        {isBatchEditMode ? (
-          <div className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-col' : 'items-center'
-            }`}>
-            {/* 顶部内容区域：图标 + 文字 */}
-            {/* 顶部内容区域：图标 + 文字 */}
-            <div className={`flex items-center gap-3 w-full h-full mb-0 ${isDetailedView ? 'mb-1' : ''}`}>
-              {/* Icon - 圆形图标 */}
-              <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-                }`}>
-                {link.icon ? (
-                  <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
-                ) : (
-                  <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-lg' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-base font-bold' : 'text-sm font-medium'
-                  }`} title={link.title}>
-                  {link.title}
-                </h3>
-
-                {isDetailedView && link.description && (
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight line-clamp-1">
-                    {link.description}
-                  </p>
-                )}
-              </div>
+        <div className={`flex flex-col flex-1 min-w-0 overflow-hidden h-full ${!isDetailedView ? 'justify-center' : ''}`}>
+          {/* 顶部内容区域：图标 + 文字 */}
+          <div className={`flex items-center gap-3 w-full mb-0 ${isDetailedView ? 'mb-1' : ''}`}>
+            {/* Icon - 圆形图标 */}
+            <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
+              }`}>
+              {link.icon ? (
+                <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
+              ) : (
+                <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-base' : 'text-sm'}`}>{link.title.charAt(0)}</span>
+              )}
             </div>
 
-            {/* 标签展示 - 紧凑布局 */}
-            {isDetailedView && link.tags && link.tags.length > 0 && (
-              <>
-                <div className="border-t border-slate-100 dark:border-slate-700/30 my-2"></div>
-                <div className="flex items-center gap-2 w-full overflow-hidden">
-                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
-                    {link.tags.map(tag => (
-                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  {/* 预览图标 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDetailViewLink(link);
-                    }}
-                    className="shrink-0 text-slate-300 dark:text-slate-600 ml-1 group-hover:text-blue-400 transition-colors p-1"
-                    title="查看详情"
-                  >
-                    <Search size={14} />
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="flex-1 min-w-0">
+              <h3 className={`text-slate-800 dark:text-slate-100 truncate overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-base font-bold' : 'text-sm font-medium'
+                }`} title={link.title}>
+                {link.title}
+              </h3>
+
+              {isDetailedView && link.description && (
+                <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight line-clamp-1">
+                  {link.description}
+                </p>
+              )}
+            </div>
           </div>
-        ) : (
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex flex-col flex-1 min-w-0 overflow-hidden h-full`}
-            title={isDetailedView ? link.url : (link.description || link.url)}
-          >
-            {/* 顶部内容区域：图标 + 文字 */}
-            <div className={`flex items-center gap-3 w-full mb-0 ${isDetailedView ? 'mb-1' : ''}`}>
-              {/* Icon - 圆形图标 */}
-              <div className={`shrink-0 flex items-center justify-center transition-transform group-hover:scale-110 duration-300 ${isDetailedView ? 'w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800' : 'w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700'
-                }`}>
-                {link.icon ? (
-                  <img src={link.icon} alt="" className="w-6 h-6 object-contain rounded-full" />
-                ) : (
-                  <span className={`font-bold text-blue-600 dark:text-blue-400 capitalize ${isDetailedView ? 'text-lg' : 'text-sm'}`}>{link.title.charAt(0)}</span>
-                )}
-              </div>
 
-              <div className="flex-1 min-w-0">
-                <h3 className={`text-slate-800 dark:text-slate-200 truncate whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors ${isDetailedView ? 'text-base font-bold' : 'text-sm font-medium'
-                  }`} title={link.title}>
-                  {link.title}
-                </h3>
-
-                {isDetailedView && link.description && (
-                  <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight line-clamp-1">
-                    {link.description}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* 标签展示 - 紧凑布局 */}
-            {isDetailedView && link.tags && link.tags.length > 0 && (
-              <>
-                <div className="border-t border-slate-100 dark:border-slate-700/30 my-2"></div>
-                <div className="flex items-center gap-2 w-full overflow-hidden">
-                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
-                    {link.tags.map(tag => (
-                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  {/* 预览图标 */}
+          {/* 标签展示 - 紧凑布局 */}
+          {isDetailedView && link.tags && link.tags.length > 0 && (
+            <>
+              <div className="border-t border-slate-100 dark:border-slate-700/30 my-2"></div>
+              <div className="flex items-center gap-2 w-full overflow-hidden">
+                <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                  {link.tags.map(tag => (
+                    <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                {/* 跳转图标 - 仅在非批量编辑模式显示 */}
+                {!isBatchEditMode && (
                   <button
                     onClick={(e) => {
-                      e.preventDefault();
                       e.stopPropagation();
-                      setDetailViewLink(link);
+                      window.open(link.url, '_blank', 'noopener,noreferrer');
                     }}
-                    className="shrink-0 text-slate-200 dark:text-slate-700 hover:text-blue-400 dark:hover:text-blue-500 transition-colors p-1"
-                    title="查看详情"
+                    className="shrink-0 text-slate-300 dark:text-slate-600 ml-1 hover:text-blue-500 transition-colors p-1"
+                    title="直接访问"
                   >
-                    <Search size={14} />
+                    <ChevronRight size={14} />
                   </button>
-                </div>
-              </>
-            )}
-
-            {!isDetailedView && link.description && (
-              <div className="tooltip-custom absolute left-0 -top-8 w-max max-w-[200px] bg-black text-white text-xs p-2 rounded opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all z-20 pointer-events-none truncate">
-                {link.description}
+                )}
               </div>
-            )}
-          </a>
-        )}
+            </>
+          )}
+
+          {!isDetailedView && link.description && (
+            <div className="tooltip-custom absolute left-0 -top-8 w-max max-w-[200px] bg-black text-white text-xs p-2 rounded opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all z-20 pointer-events-none truncate">
+              {link.description}
+            </div>
+          )}
+        </div>
 
         {/* Hover Actions (Absolute Right) - 在批量编辑模式或游客模式下隐藏 */}
         {!isBatchEditMode && !isGuestMode && (
