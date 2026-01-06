@@ -2181,8 +2181,8 @@ function App() {
                       <button
                         onClick={() => handleSearchModeChange('internal')}
                         className={`px-3 py-1 text-xs font-medium rounded-full transition-all flex items-center justify-center min-h-[24px] min-w-[40px] ${searchMode === 'internal'
-                            ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
+                          ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-slate-100'
                           }`}
                         title="站内搜索"
                       >
@@ -2201,7 +2201,7 @@ function App() {
                     </div>
 
                     {/* 搜索配置管理按钮 - 游客模式下禁用 */}
-                    {searchMode === 'external' && !isGuestMode && (
+                    {!isGuestMode && (
                       <button
                         onClick={() => setIsSearchConfigModalOpen(true)}
                         className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
