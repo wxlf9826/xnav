@@ -2876,6 +2876,9 @@ function App() {
             title={qrCodeModal.title || ''}
             onClose={() => setQrCodeModal({ isOpen: false, url: '', title: '' })}
           />
+
+          {/* 详情预览模态框 */}
+          <LinkDetailModal />
         </>
       )}
     </div>
