@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Plus, Upload, Moon, Sun, Menu, 
   Trash2, Edit2, Loader2, Cloud, CheckCircle2, AlertCircle,
-  Pin, Settings, Lock, CloudCog, Github, GitFork, GripVertical, Save, CheckSquare, LogOut, ExternalLink
+  Pin, Settings, Lock, CloudCog, Github, GitFork, GripVertical, Save, CheckSquare, LogOut, ExternalLink, Eye
 } from 'lucide-react';
 import {
   DndContext,
@@ -125,6 +125,7 @@ function App() {
   const [authToken, setAuthToken] = useState<string>('');
   const [requiresAuth, setRequiresAuth] = useState<boolean | null>(null); // null表示未检查，true表示需要认证，false表示不需要
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isGuestMode, setIsGuestMode] = useState(false); // 游客模式标识
   
   // Sort State
   const [isSortingMode, setIsSortingMode] = useState<string | null>(null); // 存储正在排序的分类ID，null表示不在排序模式
@@ -919,10 +920,11 @@ function App() {
 
   const handleLogout = () => {
       setAuthToken(null);
+      setIsGuestMode(false); // 清除游客模式状态
       localStorage.removeItem(AUTH_KEY);
-      setSyncStatus('offline');
-      // 退出后重新加载本地数据
-      loadFromLocal();
+      setSyncStatus('idle');
+      // 退出后重新显示登录界面
+      setIsAuthOpen(true);
   };
 
   // 分类操作密码验证处理函数
@@ -1894,8 +1896,8 @@ function App() {
           </a>
         )}
 
-        {/* Hover Actions (Absolute Right) - 在批量编辑模式下隐藏 */}
-        {!isBatchEditMode && (
+        {/* Hover Actions (Absolute Right) - 在批量编辑模式或游客模式下隐藏 */}
+        {!isBatchEditMode && !isGuestMode && (
           <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 dark:bg-blue-900/20 backdrop-blur-sm rounded-md p-1 absolute ${
             isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
           }`}>
@@ -1916,8 +1918,8 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden text-slate-900 dark:text-slate-50">
-      {/* 认证遮罩层 - 当需要认证时显示 */}
-      {requiresAuth && !authToken && (
+      {/* 认证遮罩层 - 当需要认证且未登录且非游客模式时显示 */}
+      {requiresAuth && !authToken && !isGuestMode && (
         <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex items-center justify-center">
           <div className="w-full max-w-md p-6">
             <div className="text-center mb-8">
@@ -1925,21 +1927,27 @@ function App() {
                 <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-                需要身份验证
+                欢迎访问导航站
               </h1>
               <p className="text-slate-600 dark:text-slate-400">
-                此导航页面设置了访问密码，请输入密码以继续访问
+                请选择访问方式:管理员登录或游客浏览
               </p>
             </div>
-            <AuthModal isOpen={true} onLogin={handleLogin} />
+            <AuthModal isOpen={true} onLogin={handleLogin} onGuestMode={() => {
+              setIsGuestMode(true);
+              setIsCheckingAuth(false);
+            }} />
           </div>
         </div>
       )}
       
-      {/* 主要内容 - 只有在不需要认证或已认证时显示 */}
-      {(!requiresAuth || authToken) && (
+      {/* 主要内容 - 只有在不需要认证或已认证或游客模式时显示 */}
+      {(!requiresAuth || authToken || isGuestMode) && (
         <>
-          <AuthModal isOpen={isAuthOpen} onLogin={handleLogin} />
+          <AuthModal isOpen={isAuthOpen} onLogin={handleLogin} onGuestMode={() => {
+            setIsGuestMode(true);
+            setIsAuthOpen(false);
+          }} />
       
       <CategoryAuthModal 
         isOpen={!!catAuthModalData}
@@ -2039,6 +2047,7 @@ function App() {
             
             <div className="flex items-center justify-between pt-4 pb-2 px-4">
                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">分类目录</span>
+               {!isGuestMode && (
                <button 
                   onClick={() => { if(!authToken) setIsAuthOpen(true); else setIsCatManagerOpen(true); }}
                   className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
@@ -2046,6 +2055,7 @@ function App() {
                >
                   <Settings size={14} />
                </button>
+               )}
             </div>
 
             {categories.map(cat => {
@@ -2075,27 +2085,42 @@ function App() {
             
             <div className="grid grid-cols-3 gap-2 mb-2">
                 <button 
-                    onClick={() => { if(!authToken) setIsAuthOpen(true); else setIsImportModalOpen(true); }}
-                    className="flex flex-col items-center justify-center gap-1 p-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all"
-                    title="导入书签"
+                    onClick={() => { if(isGuestMode) return; if(!authToken) setIsAuthOpen(true); else setIsImportModalOpen(true); }}
+                    disabled={isGuestMode}
+                    className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${
+                      isGuestMode 
+                        ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    }`}
+                    title={isGuestMode ? "游客模式无法导入" : "导入书签"}
                 >
                     <Upload size={14} />
                     <span>导入</span>
                 </button>
                 
                 <button 
-                    onClick={() => { if(!authToken) setIsAuthOpen(true); else setIsBackupModalOpen(true); }}
-                    className="flex flex-col items-center justify-center gap-1 p-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all"
-                    title="备份与恢复"
+                    onClick={() => { if(isGuestMode) return; if(!authToken) setIsAuthOpen(true); else setIsBackupModalOpen(true); }}
+                    disabled={isGuestMode}
+                    className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${
+                      isGuestMode 
+                        ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    }`}
+                    title={isGuestMode ? "游客模式无法备份" : "备份与恢复"}
                 >
                     <CloudCog size={14} />
                     <span>备份</span>
                 </button>
 
                 <button 
-                    onClick={() => setIsSettingsModalOpen(true)}
-                    className="flex flex-col items-center justify-center gap-1 p-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-all"
-                    title="AI 设置"
+                    onClick={() => { if(isGuestMode) return; setIsSettingsModalOpen(true); }}
+                    disabled={isGuestMode}
+                    className={`flex flex-col items-center justify-center gap-1 p-2 text-xs rounded-lg border transition-all ${
+                      isGuestMode 
+                        ? 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 border-slate-200 dark:border-slate-600'
+                    }`}
+                    title={isGuestMode ? "游客模式无法修改设置" : "AI 设置"}
                 >
                     <Settings size={14} />
                     <span>设置</span>
@@ -2178,8 +2203,8 @@ function App() {
                   </button>
                 </div>
                 
-                {/* 搜索配置管理按钮 */}
-                {searchMode === 'external' && (
+                {/* 搜索配置管理按钮 - 游客模式下禁用 */}
+                {searchMode === 'external' && !isGuestMode && (
                   <button
                     onClick={() => setIsSearchConfigModalOpen(true)}
                     className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
@@ -2328,7 +2353,11 @@ function App() {
 
             {/* 登录/退出按钮 - 移动端：搜索框展开时隐藏，桌面端始终显示 */}
             <div className={`${isMobileSearchOpen ? 'hidden' : 'flex'}`}>
-              {!authToken ? (
+              {isGuestMode ? (
+                  <button onClick={() => setIsAuthOpen(true)} className="flex items-center gap-2 bg-amber-200 dark:bg-amber-700 px-3 py-1.5 rounded-full text-xs font-medium">
+                      <Eye size={14} /> <span className="hidden sm:inline">游客模式</span>
+                  </button>
+              ) : !authToken ? (
                   <button onClick={() => setIsAuthOpen(true)} className="flex items-center gap-2 bg-slate-200 dark:bg-slate-700 px-3 py-1.5 rounded-full text-xs font-medium">
                       <Cloud size={14} /> <span className="hidden sm:inline">登录</span>
                   </button>
@@ -2339,7 +2368,8 @@ function App() {
               )}
             </div>
 
-            {/* 添加按钮 - 移动端：搜索框展开时隐藏，桌面端始终显示 */}
+            {/* 添加按钮 - 移动端：搜索框展开时隐藏，桌面端始终显示 - 游客模式下隐藏 */}
+            {!isGuestMode && (
             <div className={`${isMobileSearchOpen ? 'hidden' : 'flex'}`}>
               <button
                 onClick={() => { if(!authToken) setIsAuthOpen(true); else { setEditingLink(undefined); setIsModalOpen(true); }}}
@@ -2348,6 +2378,7 @@ function App() {
                 <Plus size={16} /> <span className="hidden sm:inline">添加</span>
               </button>
             </div>
+            )}
           </div>
         </header>
 
@@ -2367,7 +2398,8 @@ function App() {
                                 {pinnedLinks.length}
                             </span>
                         </div>
-                        {isSortingPinned ? (
+                        {!isGuestMode && (
+                        isSortingPinned ? (
                             <div className="flex gap-2">
                                 <button 
                                     onClick={savePinnedSorting}
@@ -2394,6 +2426,7 @@ function App() {
                                 <GripVertical size={14} />
                                 <span>排序</span>
                             </button>
+                        )
                         )}
                     </div>
                     {isSortingPinned ? (
@@ -2459,7 +2492,7 @@ function App() {
                             )
                          }
                      </h2>
-                     {selectedCategory !== 'all' && !isCategoryLocked(selectedCategory) && (
+                     {selectedCategory !== 'all' && !isCategoryLocked(selectedCategory) && !isGuestMode && (
                          isSortingMode === selectedCategory ? (
                              <div className="flex gap-2">
                                  <button 
@@ -2621,6 +2654,7 @@ function App() {
             onEditLink={editLinkFromContextMenu}
             onDeleteLink={deleteLinkFromContextMenu}
             onTogglePin={togglePinFromContextMenu}
+            isGuestMode={isGuestMode}
           />
 
           {/* 二维码模态框 */}

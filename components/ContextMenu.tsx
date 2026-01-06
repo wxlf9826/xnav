@@ -10,6 +10,7 @@ interface ContextMenuProps {
   onEditLink: () => void;
   onDeleteLink: () => void;
   onTogglePin: () => void;
+  isGuestMode?: boolean; // 新增游客模式标识
 }
 
 const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -20,7 +21,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
   onShowQRCode,
   onEditLink,
   onDeleteLink,
-  onTogglePin
+  onTogglePin,
+  isGuestMode = false
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -60,13 +62,18 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     y: Math.min(position.y, window.innerHeight - 200)
   };
 
-  const menuItems = [
-    { icon: Copy, label: '复制链接', onClick: onCopyLink },
-    { icon: QrCode, label: '显示二维码', onClick: onShowQRCode },
-    { icon: Edit2, label: '编辑链接', onClick: onEditLink },
-    { icon: Pin, label: '置顶/取消置顶', onClick: onTogglePin },
-    { icon: Trash2, label: '删除链接', onClick: onDeleteLink, className: 'text-red-600 dark:text-red-400' }
+  // 根据游客模式过滤菜单项
+  const allMenuItems = [
+    { icon: Copy, label: '复制链接', onClick: onCopyLink, showInGuest: true },
+    { icon: QrCode, label: '显示二维码', onClick: onShowQRCode, showInGuest: true },
+    { icon: Edit2, label: '编辑链接', onClick: onEditLink, showInGuest: false },
+    { icon: Pin, label: '置顶/取消置顶', onClick: onTogglePin, showInGuest: false },
+    { icon: Trash2, label: '删除链接', onClick: onDeleteLink, className: 'text-red-600 dark:text-red-400', showInGuest: false }
   ];
+
+  const menuItems = isGuestMode 
+    ? allMenuItems.filter(item => item.showInGuest)
+    : allMenuItems;
 
   return (
     <div
