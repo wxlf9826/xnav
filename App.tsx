@@ -1855,18 +1855,21 @@ function App() {
             </div>
           </div>
 
-          {/* 标签展示 - 移除文件夹图标，紧凑布局 */}
-          {isDetailedView && link.tags && link.tags.length > 0 && (
+          {/* 标签展示和跳转按钮 - 紧凑布局 */}
+          {isDetailedView && (
             <>
               <div className="border-t border-slate-100 dark:border-slate-700/30 my-2"></div>
               <div className="flex items-center gap-2 w-full overflow-hidden">
-                <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
-                  {link.tags.map(tag => (
-                    <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {link.tags && link.tags.length > 0 && (
+                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                    {link.tags.map(tag => (
+                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(!link.tags || link.tags.length === 0) && <div className="flex-1"></div>}
                 {/* 跳转图标 - 箭头 */}
                 <button
                   onClick={(e) => {
@@ -1906,9 +1909,17 @@ function App() {
             </button>
             <div className="w-20 h-20 rounded-2xl bg-white dark:bg-slate-800 shadow-xl flex items-center justify-center transform -mb-10 border border-slate-100 dark:border-slate-700">
               {detailViewLink.icon ? (
-                <img src={detailViewLink.icon} alt="" className="w-12 h-12 object-contain" />
+                <img
+                  src={detailViewLink.icon}
+                  alt=""
+                  className="w-12 h-12 object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = DEFAULT_ICON_SVG;
+                  }}
+                />
               ) : (
-                <span className="text-3xl font-bold text-blue-500 capitalize">{detailViewLink.title.charAt(0)}</span>
+                <img src={DEFAULT_ICON_SVG} alt="" className="w-12 h-12 object-contain" />
               )}
             </div>
           </div>
@@ -2025,18 +2036,21 @@ function App() {
             </div>
           </div>
 
-          {/* 标签展示 - 紧凑布局 */}
-          {isDetailedView && link.tags && link.tags.length > 0 && (
+          {/* 标签展示和跳转按钮 - 紧凑布局 */}
+          {isDetailedView && (
             <>
               <div className="border-t border-slate-100 dark:border-slate-700/30 my-2"></div>
               <div className="flex items-center gap-2 w-full overflow-hidden">
-                <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
-                  {link.tags.map(tag => (
-                    <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {link.tags && link.tags.length > 0 && (
+                  <div className="flex-1 flex overflow-x-auto scrollbar-hide gap-1.5 whitespace-nowrap py-0.5">
+                    {link.tags.map(tag => (
+                      <span key={tag} className="inline-block px-2 py-0.5 bg-red-50 dark:bg-red-900/10 text-red-500 dark:text-red-400 text-[10px] font-medium rounded transition-colors hover:bg-red-100 dark:hover:bg-red-900/30">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(!link.tags || link.tags.length === 0) && <div className="flex-1"></div>}
                 {/* 跳转图标 - 仅在非批量编辑模式显示 */}
                 {!isBatchEditMode && (
                   <button
@@ -2044,7 +2058,7 @@ function App() {
                       e.stopPropagation();
                       window.open(link.url, '_blank', 'noopener,noreferrer');
                     }}
-                    className="shrink-0 text-slate-300 dark:text-slate-600 ml-1 hover:text-blue-500 transition-colors p-1"
+                    className="shrink-0 text-slate-300 dark:text-slate-600 ml-1 hover:text-blue-500 transition-colors p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     title="直接访问"
                   >
                     <ChevronRight size={14} />
@@ -2754,7 +2768,7 @@ function App() {
                             : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                             }`}
                         >
-                          #{tag}
+                          {tag}
                         </button>
                       ))}
                     </div>
